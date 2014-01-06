@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 #
 # Features:
-# * Uses rsync flags suitable for preserving Mac OS X attributes.
+# * Uses rsync flags suitable for preserving Mac attributes on non-Mac servers.
 # * Uses compression, but turns it off for common binary file types.
 # * Writes a log file and rsync's a copy of the log file to the server.
 #
@@ -39,7 +39,7 @@ LOCAL_RSYNC="/opt/local/bin/rsync"
 
 # Remote backup server's host name.
 #
-BACKUPHOST="quantitative.caltech.edu"
+REMOTE_HOST="CHANGEME"
 
 # Path to rsync on the backup server.  Leave blank to use whatever the
 # default may be on the remote server.
@@ -48,14 +48,14 @@ REMOTE_RSYNC=""
 
 # Path to the local directory that we're backing up.
 #
-LOCAL_DIR="/Volumes/Archives/cold-storage"
+LOCAL_DIR="CHANGEME"
 
 # Path where backups will be put on the backup server.  If this is a relative
 # pathname, then it will be relative to the user's home directory on the
 # remote system.  (E.g.: if your login is "jimmy" and REMOTE_DIR="backups/",
 # then the mirrored files will be put in ~jimmy/backups/ on the remote host.)
 #
-REMOTE_DIR="/Volumes/Archives/mhucka"
+REMOTE_DIR="CHANGEME"
 
 # Full path to a file of personal files to exclude from the mirror.  See the
 # rsync man page for info about how to use the --exclude-from option.  Change
@@ -64,10 +64,11 @@ REMOTE_DIR="/Volumes/Archives/mhucka"
 #
 PERSONAL_EXCLUDES=""
 
+LOG_ROOT_NAME="CHANGEME"
+
 # Full path to a directory where log files will be written by this script.
 #
-LOG_ROOT_NAME="mirror-cold-storage"
-LOG_DIR="/Users/mhucka/.logs/$LOG_ROOT_NAME"
+LOG_DIR="$HOME/.logs/$LOG_ROOT_NAME"
 
 
 # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
@@ -87,8 +88,8 @@ if test $x -lt 3 || (test $x -eq 3 && test $y -lt 1 && test $z -lt 5); then
 fi
 
 # [Notes 2008-10-20] It is not clear to me whether --force-change should be
-# used only for MacOS or for all clients.  --fileflags does not exist on
-# RHEL Server linux (and possibly others).
+# used only for MacOS or for all clients.  Also, --fileflags does not exist
+# on RHEL Server linux (and possibly others).  This leads to the following:
 
 if [ "`uname`" = "Darwin" ]; then
   OS_FLAGS="--crtimes --acls --xattrs --fileflags --force-change"
@@ -114,18 +115,20 @@ TIMESTAMP=`date '+%G-%m-%d-%H%M'`
 LOGNAME="$LOG_ROOT_NAME-$TIMESTAMP.log"
 LOGFILE="$LOG_DIR/$LOGNAME"
 
-echo Started at $TIMESTAMP
-echo Logging output to $LOGFILE
+echo "Started at $TIMESTAMP"
 
-echo Running "$LOCAL_RSYNC $FLAGS $LOCAL_DIR $BACKUPHOST:$REMOTE_DIR/" > $LOGFILE
+mkdir -p $LOG_DIR
 
-"$LOCAL_RSYNC" $FLAGS $LOCAL_DIR $BACKUPHOST:$REMOTE_DIR/ >> $LOGFILE 2>&1
+echo "Logging output to $LOGFILE"
+echo "Running $LOCAL_RSYNC $FLAGS $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/" > $LOGFILE
 
-echo Copying log file to remote directory.
+"$LOCAL_RSYNC" $FLAGS $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/ >> $LOGFILE 2>&1
 
-"$LOCAL_RSYNC" $FLAGS -q $LOGFILE $BACKUPHOST:$REMOTE_DIR/logs/$LOGNAME >> $LOGFILE 2>&1
+echo "Copying log file to remote directory."
 
-echo Done.  Ended at `date '+%G-%m-%d-%H%M'`
+"$LOCAL_RSYNC" $FLAGS -q $LOGFILE $REMOTE_HOST:$REMOTE_DIR/logs/$LOGNAME >> $LOGFILE 2>&1
+
+echo "Done.  Ended at `date '+%G-%m-%d-%H%M'`"
 
 
 # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
