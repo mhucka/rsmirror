@@ -24,15 +24,11 @@ Requirements
 Background
 ----------
 
+Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use rsync over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to rsync to preserve as many of the Mac OS X file attributes as possible.  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine.
+
 
 Usage
 -----
-
-There are three parts to using this.
-
-### Installing the plug-in
-
-### Configuring the plug-in
 
 
 License
