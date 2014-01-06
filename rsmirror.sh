@@ -64,6 +64,9 @@ REMOTE_DIR="CHANGEME"
 #
 PERSONAL_EXCLUDES=""
 
+# Root name to use for the log file.  This will be concatenated with a date
+# stamp to produce the final name of the log file that is written.
+#
 LOG_ROOT_NAME="CHANGEME"
 
 # Full path to a directory where log files will be written by this script.
