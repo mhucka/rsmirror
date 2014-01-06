@@ -6,7 +6,7 @@ A shell script for mirroring a Mac OS X directory to a remote computer.  It uses
 ----
 *Author*: Michael Hucka (http://www.cds.caltech.edu/~mhucka)
 
-*Copyright*: Copyright (C) 2011-2014 by the California Institute of Technology, Pasadena, USA.
+*Copyright*: Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.
 
 *License*: This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://raw.github.com/mhucka/rsmirror/master/COPYING.txt) for details.
 
