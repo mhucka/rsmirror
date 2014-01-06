@@ -1,9 +1,19 @@
 #!/bin/sh
 # -----------------------------------------------------------------------------
 # Description:  Run rsync to back up a Mac OS X directory to a server.
-# First Author:	2011-12-13 <mhucka@caltech.edu>
+# Author:	Michael Hucka <mhucka@caltech.edu>
+# Date created: Sometime in 2008
 # Organization: California Institute of Technology
 # -----------------------------------------------------------------------------
+#
+# This is a script for mirroring a Mac OS X directory to a remote computer.
+# It uses rsync over ssh, with settings that attempt to preserve Mac OS X
+# file attributes even if the server is not a Mac or does not use an HFS+
+# file system.  This is not intended to be used with an "rsync server"; it is
+# intended for the situation where you simply have a remote computer with
+# rsync and ssh installed.  In normal usage, you would invoke this script
+# from a crontab entry to regularly mirror a directory on your local computer
+# to the remote computer.
 #
 # Features:
 # * Uses rsync flags suitable for preserving Mac attributes on non-Mac servers.
@@ -37,14 +47,21 @@
 #
 LOCAL_RSYNC="/opt/local/bin/rsync"
 
-# Remote backup server's host name.
-#
-REMOTE_HOST="CHANGEME"
-
 # Path to rsync on the backup server.  Leave blank to use whatever the
 # default may be on the remote server.
 #
 REMOTE_RSYNC=""
+
+# The remote shell program and arguments to use when invoking rsync on the
+# local host.  This is passed to rsync using the --rsh argument.  Only change
+# this value from its default (which is "ssh") if you need to provide
+# arguments to the ssh command.
+#
+RSYNC_RSH="ssh"
+
+# The remote backup server's host name.
+#
+REMOTE_HOST="CHANGEME"
 
 # Path to the local directory that we're backing up.
 #
@@ -70,8 +87,9 @@ PERSONAL_EXCLUDES=""
 LOG_ROOT_NAME="CHANGEME"
 
 # Full path to a directory where log files will be written by this script.
+# Possible example: "$HOME/.logs/$LOG_ROOT_NAME"
 #
-LOG_DIR="$HOME/.logs/$LOG_ROOT_NAME"
+LOG_DIR="CHANGEME"
 
 
 # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
@@ -110,9 +128,9 @@ NOCOMPRESS1="gz/zip/z/rpm/deb/iso/bz2/tgz/7z/mp3/mp4/m4p/mpg/mpeg/mov/avi"
 NOCOMPRESS2="ogg/dmg/jpg/JPG/jpeg/gif/GIF/tif/tiff/png/PNG/NEF/pict/MYI/MYD"
 COMPRESSION="-z --skip-compress=$NOCOMPRESS1/$NOCOMPRESS2"
 
-FLAGS="$BASIC $REMOTE_RSYNC $COMPRESSION $OS_FLAGS $EXCLUDES"
+FLAGS="$BASIC --rsh=\'$RSYNC_SSH\' $REMOTE_RSYNC $COMPRESSION $OS_FLAGS $EXCLUDES"
 
-# Let's do it!
+# Let's do this thing.
 
 TIMESTAMP=`date '+%G-%m-%d-%H%M'`
 LOGNAME="$LOG_ROOT_NAME-$TIMESTAMP.log"
