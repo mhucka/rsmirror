@@ -45,7 +45,7 @@
 
 # Full path to rsync on this computer.
 #
-LOCAL_RSYNC="/opt/local/bin/rsync"
+LOCAL_RSYNC="rsync"
 
 # Path to rsync on the backup server.  Leave blank to use whatever the
 # default may be on the remote server.
