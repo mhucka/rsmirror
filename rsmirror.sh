@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 # -----------------------------------------------------------------------------
 # Description:  Run rsync to back up a Mac OS X directory to a server.
 # Author:	Michael Hucka <mhucka@caltech.edu>
@@ -220,23 +220,24 @@ if [ -z "$quiet" ]; then
     echo "Started at $timestamp"
 fi
 
+cmd="$LOCAL_RSYNC $flags $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/"
 
 if [ -z "$dry_run" ]; then
     if [ "$LOG_DIR" != "" -a -z "$quiet" ]; then
         echo "Logging output to $log_file"
     fi
     echo "Using configuration file $config_file" > "$log_file"
-    echo "Running $LOCAL_RSYNC $flags $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/" > "$log_file"
+    echo "Running $cmd" > "$log_file"
 else
     if [ "$LOG_DIR" != "" -a -z "$quiet"  ]; then
         echo "Will log output to $log_file"
     fi
     echo "Will use configuration file $config_file"
-    echo "Will run $LOCAL_RSYNC $flags $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/"
+    echo "Will run $cmd"
 fi
 
 if [ -z "$dry_run" ]; then
-    "$LOCAL_RSYNC" $dry_run $flags "$LOCAL_DIR" $REMOTE_HOST:"$REMOTE_DIR"/ >> "$log_file" 2>&1
+    $cmd >> "$log_file" 2>&1
     if [ $? -ne 0 ]; then
 	if [ "$LOG_DIR" != "" ]; then
 	    echo "rsync returned an error -- check $log_file"
