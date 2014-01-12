@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 # -----------------------------------------------------------------------------
 # Description:  Run rsync to back up a Mac OS X directory to a server.
 # Author:	Michael Hucka <mhucka@caltech.edu>
@@ -152,11 +152,12 @@ if test $x -lt 3 || (test $x -eq 3 && test $y -lt 1 && test $z -lt 5); then
     exit 1
 fi
 
-# Start the timeout timer.
+# Start the timeout timer, if one is set.
 
 mainpid=$$
 if [ "$TIMEOUT" -gt 0 ] 2>/dev/null; then
-    (sleep $TIMEOUT; kill $mainpid > /dev/null 2>&1) & watchdogpid=$!
+    msg="Configured timeout reached: terminating '$0 -c $config_file'"
+    (sleep $TIMEOUT; echo $msg; kill $mainpid > /dev/null 2>&1) & watchdogpid=$!
 fi
 
 # Set up flags.
@@ -194,7 +195,7 @@ fi
 # Let's do this thing.
 
 if [ -z "$dry_run" -a -n "$LOG_DIR" ]; then
-    mkdir -p $LOG_DIR
+    mkdir -p "$LOG_DIR"
 fi
 
 timestamp=$(date '+%G-%m-%d:%H%M')
@@ -203,8 +204,8 @@ logbasename=${configname%.*}
 logname="$logbasename-$timestamp.log"
 
 cleanup() {
-  rm -f $log_file
-  [ -e $temp_log_dir ] && rmdir $temp_log_dir
+  rm -f "$log_file"
+  [ -e "$temp_log_dir" ] && rmdir "$temp_log_dir"
 }
 
 if [ "$LOG_DIR" != "" ]; then
@@ -223,8 +224,8 @@ if [ -z "$dry_run" ]; then
     if [ "$LOG_DIR" != "" -a -z "$quiet" ]; then
         echo "Logging output to $log_file"
     fi
-    echo "Using configuration file $config_file" > $log_file
-    echo "Running $LOCAL_RSYNC $flags $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/" > $log_file
+    echo "Using configuration file $config_file" > "$log_file"
+    echo "Running $LOCAL_RSYNC $flags $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/" > "$log_file"
 else
     if [ "$LOG_DIR" != "" -a -z "$quiet"  ]; then
         echo "Will log output to $log_file"
@@ -234,7 +235,7 @@ else
 fi
 
 if [ -z "$dry_run" ]; then
-    "$LOCAL_RSYNC" $dry_run $flags "$LOCAL_DIR" $REMOTE_HOST:"$REMOTE_DIR"/ >> $log_file 2>&1
+    "$LOCAL_RSYNC" $dry_run $flags "$LOCAL_DIR" $REMOTE_HOST:"$REMOTE_DIR"/ >> "$log_file" 2>&1
 fi
 
 if [ -z "$quiet" ]; then
