@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Rsmirror by mhucka</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Rsmirror</h1>
+        <p>A shell script for mirroring a Mac OS X directory to a remote computer using rsync over ssh.</p>
+
+        <p class="view"><a href="https://github.com/mhucka/rsmirror">View the Project on GitHub <small>mhucka/rsmirror</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/mhucka/rsmirror/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/mhucka/rsmirror/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/mhucka/rsmirror">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="rsmirror" class="anchor" href="#rsmirror"><span class="octicon octicon-link"></span></a>rsmirror</h1>
+
+<p>A shell script for mirroring a Mac OS X directory to a remote computer.  It uses rsync over ssh, with settings that attempt to preserve Mac OS X file attributes even if the server is not a Mac or does not use an HFS+ file system.</p>
+
+<hr><p><em>Author</em>:       Michael Hucka (<a href="http://www.cds.caltech.edu/%7Emhucka">http://www.cds.caltech.edu/~mhucka</a>)</p>
+
+<p><em>Copyright</em>:    Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.</p>
+
+<p><em>License</em>:      This code is licensed under the LGPL version 2.1.  Please see the Please see the file <a href="https://raw.github.com/mhucka/rsmirror/master/COPYING.txt">../COPYING.txt</a> for details.</p>
+
+<p><em>Project page</em>: <a href="http://mhucka.github.io/rsmirror">http://mhucka.github.io/rsmirror</a></p>
+
+<p><em>Repository</em>:   <a href="https://github.com/mhucka/rsmirror">https://github.com/mhucka/rsmirror</a></p>
+
+<h2>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<ol>
+<li><p>This requires <code>rsync</code> 3.0.5 or higher on both the client and backup server.</p></li>
+<li><p>This requires the <code>fileflags</code> and <code>crtimes</code> patches for <code>rsync</code> to be applied on Mac OS X systems.  For more information, see the <code>rsync</code> patch directory (which, for version 3.0.5, is <a href="http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz">http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz</a>).  As of 2011-01-19, the version of <code>rsync</code> supplied by MacPorts is 3.0.7 and includes the necessary patches.</p></li>
+</ol><h2>
+<a name="background" class="anchor" href="#background"><span class="octicon octicon-link"></span></a>Background</h2>
+
+<p>Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use <code>rsync</code> over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to <code>rsync</code> to preserve as many of the Mac OS X file attributes as possible (and the copy of <code>rsync</code> on the server may need to be patched to support the arguments).  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine (such as making it delete files from the remote copy if they are no longer present in the source directory being mirrored).</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>The installation is simple.</p>
+
+<p><strong>1.</strong> Copy <code>rsmirror.sh</code> to a directory of your choosing, and make sure it is executable.</p>
+
+<p><strong>2.</strong> Copy <code>sample.config</code> to a location of your choosing, renaming it to something suitable (perhaps named after the directory you are going to mirror).  If you want to create multiple mirroring configurations, copy <code>sample.config</code> as many times as you need and give each copy a different name.</p>
+
+<p><strong>3.</strong> Edit the configuration file(s).  Set the values for the different variables inside.  The comments explain the purposes of the variables.</p>
+
+<p><strong>4.</strong> Test your configurations, first by invoking <code>rsmirror.sh -n -c CONFIG</code> (where the <code>-n</code> flag tells rsmirror.sh to echo what it will do without actually doing it, and <code>CONFIG</code> is the path to a configuration file from steps 2-3), and then by invoking <code>rsmirror.sh -c CONFIG</code> and checking that it appears to have done what you expected.</p>
+
+<p>Once that is done, you can invoke <code>rsmirror.sh -c CONFIG</code> whenever you want to mirror the directory.  You may find it convenient to set up a cron job to perform the task on a nightly basis.</p>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p><code>rsmirror.sh</code> takes three arguments, one required and two optional:</p>
+
+<ul>
+<li><p><code>-c CONFIG</code> is a required argument; <code>CONFIG</code> must be the pathname of a configuration file.</p></li>
+<li><p><code>-n</code> means do a "dry run": explain what would be done without actually doing it.</p></li>
+<li><p><code>-q</code> means be quiet: don't print informative messages.  (However, if logging is configured, then <code>rsmirror.sh</code> will still write the log file.)</p></li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.</p>
+
+<p>This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.</p>
+
+<p>This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and documentation provided hereunder is on an "as is" basis, and the California Institute of Technology has no obligations to provide maintenance, support, updates, enhancements or modifications.  In no event shall the California Institute of Technology be liable to any party for direct, indirect, special, incidental or consequential damages, including lost profits, arising out of the use of this software and its documentation, even if the California Institute of Technology has been advised of the possibility of such damage.  See the GNU Lesser General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public License along with this library in the file named "COPYING.txt" included with the software distribution.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/mhucka">mhucka</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-27668668-7");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
