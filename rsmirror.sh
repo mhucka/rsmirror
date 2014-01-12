@@ -170,8 +170,8 @@ if [ "`uname`" = "Darwin" ]; then
   os_flags="--crtimes --acls --xattrs --fileflags --force-change --hfs-compression --protect-decmpfs"
   os_excludes="--exclude .Spotlight-V100 --exclude /private/var/vm"
 else
-  os_flags="--iconv=UTF-8-MAC,UTF-8"
-  os_excludes="--exclude /proc"
+  os_flags="--iconv=UTF-8,UTF-8-MAC"
+  os_excludes=
 fi
 
 if [ -n "${REMOTE_RSYNC}" ]; then
@@ -180,8 +180,8 @@ fi
 
 # The following are hopefully generic to everything:
 
-basic="-vaxH --stats --numeric-ids --fake-super --delete --delete-excluded --ignore-errors"
-excludes="--exclude /dev $os_excludes $EXTRA_EXCLUDES"
+basic="-vaxH --stats --numeric-ids --fake-super --protect-args --delete --delete-excluded --ignore-errors"
+excludes="$os_excludes $EXTRA_EXCLUDES"
 nocompress1="gz/zip/z/rpm/deb/iso/bz2/tgz/7z/mp3/mp4/m4p/mpg/mpeg/mov/avi"
 nocompress2="ogg/dmg/jpg/JPG/jpeg/gif/GIF/tif/tiff/png/PNG/NEF/pict/MYI/MYD"
 compression="-z --skip-compress=$nocompress1/$nocompress2"
