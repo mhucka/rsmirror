@@ -242,7 +242,9 @@ if [ -z "$quiet" ]; then
     echo "Done.  Ended at `date '+%G-%m-%d:%H%M'`"
 fi
 
-kill $watchdogpid
+if [ "$TIMEOUT" -gt 0 ] 2>/dev/null; then
+    kill $watchdogpid
+fi
 
 # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 # End of script.
