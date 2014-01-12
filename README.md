@@ -32,7 +32,7 @@ Sometimes you want to mirror one or more directories to a remote machine, for ex
 Installation
 ------------
 
-The installation is simple.
+The installation process is simple.
 
 **1.** Copy `rsmirror.sh` to a directory of your choosing, and make sure it is executable.
 
