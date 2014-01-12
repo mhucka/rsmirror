@@ -24,11 +24,35 @@ Requirements
 Background
 ----------
 
-Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use rsync over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to rsync to preserve as many of the Mac OS X file attributes as possible.  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine.
+Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use rsync over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to rsync to preserve as many of the Mac OS X file attributes as possible (and the copy of rsync on the server may need to be patched to support the arguments).  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine (such as making it delete files from the remote copy if they are no longer present in the source directory being mirrored).
+
+
+Installation
+------------
+
+The installation is simple.
+
+**1.** Copy `rsmirror.sh` to a directory of your choosing, and make sure it is executable.
+
+**2.** Copy `sample.config` to a location of your choosing, renaming it to something suitable (perhaps named after the directory you are going to mirror).  If you want to create multiple mirroring configurations, copy `sample.config` as many times as you need and give each copy a different name.
+
+**3.** Edit the configuration file(s).  Set the values for the different variables inside.  The comments explain the purposes of the variables.
+
+**4.** Test your configurations, first by invoking `rsmirror.sh -n -c CONFIG` (where the `-n` flag tells rsmirror.sh to echo what it will do without actually doing it, and `CONFIG` is the path to a configuration file from steps 2-3), and then by invoking `rsmirror.sh -c CONFIG` and checking that it appears to have done what you expected.
+
+Once that is done, you can invoke `rsmirror.sh -c CONFIG` whenever you want to mirror the directory.  You may find it convenient to set up a cron job to perform the task on a nightly basis.
 
 
 Usage
 -----
+
+`rsmirror.sh` takes three arguments, one required and two optional:
+
+* `-c CONFIG` is a required argument; `CONFIG` must be the pathname of a configuration file.
+
+* `-n` means do a "dry run": explain what would be done without actually doing it.
+
+* `-q` means be quiet: don't print informative messages.  (However, if logging is configured, then `rsmirror.sh` will still write the log file.)
 
 
 License
