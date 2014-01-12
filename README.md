@@ -18,15 +18,15 @@ A shell script for mirroring a Mac OS X directory to a remote computer.  It uses
 Requirements
 ------------
 
-1. This requires rsync 3.0.5 or higher on both the client and backup server.
+1. This requires `rsync` 3.0.5 or higher on both the client and backup server.
 
-2. This requires the fileflags and crtimes patches for rsync to be applied on Mac OS systems.  For more information, see the rsync patch directory (which, for version 3.0.5, is http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz).  As of 2011-01-19, the rsync supplied by MacPorts is 3.0.7 and includes the necessary patches.
+2. This requires the `fileflags` and `crtimes` patches for `rsync` to be applied on Mac OS X systems.  For more information, see the `rsync` patch directory (which, for version 3.0.5, is http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz).  As of 2011-01-19, the version of `rsync` supplied by MacPorts is 3.0.7 and includes the necessary patches.
 
 
 Background
 ----------
 
-Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use rsync over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to rsync to preserve as many of the Mac OS X file attributes as possible (and the copy of rsync on the server may need to be patched to support the arguments).  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine (such as making it delete files from the remote copy if they are no longer present in the source directory being mirrored).
+Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use `rsync` over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to `rsync` to preserve as many of the Mac OS X file attributes as possible (and the copy of `rsync` on the server may need to be patched to support the arguments).  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine (such as making it delete files from the remote copy if they are no longer present in the source directory being mirrored).
 
 
 Installation
