@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 # -----------------------------------------------------------------------------
 # Description:  Run rsync to back up a Mac OS X directory to a server.
 # Author:	Michael Hucka <mhucka@caltech.edu>
@@ -220,6 +220,7 @@ if [ -z "$quiet" ]; then
     echo "Started at $timestamp"
 fi
 
+
 if [ -z "$dry_run" ]; then
     if [ "$LOG_DIR" != "" -a -z "$quiet" ]; then
         echo "Logging output to $log_file"
@@ -236,13 +237,22 @@ fi
 
 if [ -z "$dry_run" ]; then
     "$LOCAL_RSYNC" $dry_run $flags "$LOCAL_DIR" $REMOTE_HOST:"$REMOTE_DIR"/ >> "$log_file" 2>&1
+    if [ $? -ne 0 ]; then
+	if [ "$LOG_DIR" != "" ]; then
+	    echo "rsync returned an error -- check $log_file"
+	else
+	    echo "rsync returned error -- turn on logging for details"
+	fi
+    fi
 fi
 
 if [ -z "$quiet" ]; then
     echo "Done.  Ended at `date '+%G-%m-%d:%H%M'`"
 fi
 
-kill $watchdogpid
+if [ "$TIMEOUT" -gt 0 ] 2>/dev/null; then
+    kill $watchdogpid
+fi
 
 # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 # End of script.
