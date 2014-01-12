@@ -164,7 +164,7 @@ fi
 
 # [Notes 2008-10-20] It is not clear to me whether --force-change should be
 # used only for MacOS or for all clients.  Also, --fileflags does not exist
-# on RHEL Server linux (and possibly others).  This leads to the following:
+# on RHEL Server linux (and possibly others).
 
 if [ "`uname`" = "Darwin" ]; then
   os_flags="--crtimes --acls --xattrs --fileflags --force-change --hfs-compression --protect-decmpfs"
