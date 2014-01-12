@@ -240,9 +240,9 @@ if [ -z "$dry_run" ]; then
     $cmd >> "$log_file" 2>&1
     if [ $? -ne 0 ]; then
 	if [ "$LOG_DIR" != "" ]; then
-	    echo "rsync returned an error -- check $log_file"
+	    echo "rsync returned an error code -- check $log_file"
 	else
-	    echo "rsync returned error -- turn on logging for details"
+	    echo "rsync returned an error code -- turn on logging for details"
 	fi
     fi
 fi
