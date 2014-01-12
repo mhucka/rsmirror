@@ -57,6 +57,20 @@ Usage
 * `-q` means be quiet: don't print informative messages.  (However, if logging is configured, then `rsmirror.sh` will still write the log file.)
 
 
+Contributing
+------------
+
+I welcome improvements of all kinds, to the code and to the documentation.
+Please feel free to contact me or do the following:
+
+1. Fork this repo.  See the links at the top of the github page.
+2. Create your feature branch (`git checkout -b my-new-feature`) and write
+your changes to the code or documentation.
+3. Commit your changes (`git commit -am 'Describe your changes here'`).
+4. Push to the branch (`git push origin my-new-feature`).
+5. Create a new pull request to notify me of your suggested changes.
+
+
 License
 -------
 
