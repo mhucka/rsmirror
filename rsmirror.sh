@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 # -----------------------------------------------------------------------------
 # Description:  Run rsync to back up a Mac OS X directory to a server.
 # Author:	Michael Hucka <mhucka@caltech.edu>
@@ -202,14 +202,17 @@ configname=$(basename $config_file)
 logbasename=${configname%.*}
 logname="$logbasename-$timestamp.log"
 
+cleanup() {
+  rm -f $log_file
+  [ -e $temp_log_dir ] && rmdir $temp_log_dir
+}
+
 if [ "$LOG_DIR" != "" ]; then
     log_file="$LOG_DIR/$logname"
 else
     temp_log_dir=$(mktemp -d /tmp/rsmirror-$logbasename.XXX)
     log_file="$temp_log_dir/$logname"
-    trap 'rm -f $log_file; rmdir $temp_log_dir' EXIT
-    trap 'rm -f $log_file; rmdir $temp_log_dir' TERM
-    trap 'rm -f $log_file; rmdir $temp_log_dir' INT
+    trap "cleanup" EXIT
 fi
 
 if [ -z "$quiet" ]; then
