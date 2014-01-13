@@ -2,8 +2,9 @@
 # -----------------------------------------------------------------------------
 # Description:  Run rsync to back up a Mac OS X directory to a server.
 # Author:	Michael Hucka <mhucka@caltech.edu>
-# Date created: Sometime in 2008
 # Organization: California Institute of Technology
+# Date created: Sometime in 2008
+# Source:       https://github.com/mhucka/rsmirror
 # -----------------------------------------------------------------------------
 #
 # This is a script for mirroring a Mac OS X directory to a remote computer.
