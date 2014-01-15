@@ -44,7 +44,9 @@
 # Don't set the values here; use a configuration file and the -c flag.
 # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
-# [Required] Path to the local directory that we're backing up.
+# [Required] Path to the local directory(ies) to be mirrored.  You can put
+# more than one directory here; enclose the list in double quotes and
+# separate directory paths by spaces.
 #
 LOCAL_DIR=CHANGEME
 
@@ -199,10 +201,10 @@ if [ -z "$dry_run" -a -n "$LOG_DIR" ]; then
     mkdir -p "$LOG_DIR"
 fi
 
-timestamp=$(date '+%G-%m-%d:%H%M')
+start_time=$(date '+%G-%m-%d:%H%M')
 configname=$(basename $config_file)
 logbasename=${configname%.*}
-logname="$logbasename-$timestamp.log"
+logname="$logbasename-$start_time.log"
 
 cleanup() {
   rm -f "$log_file"
@@ -218,8 +220,9 @@ else
 fi
 
 if [ -z "$quiet" ]; then
-    echo "Started at $timestamp"
+    echo "Started at $start_time"
 fi
+echo "Started at $start_time" > "$log_file"
 
 cmd="$LOCAL_RSYNC $flags $LOCAL_DIR $REMOTE_HOST:$REMOTE_DIR/"
 
@@ -227,8 +230,8 @@ if [ -z "$dry_run" ]; then
     if [ "$LOG_DIR" != "" -a -z "$quiet" ]; then
         echo "Logging output to $log_file"
     fi
-    echo "Using configuration file $config_file" > "$log_file"
-    echo "Running $cmd" > "$log_file"
+    echo "Using configuration file $config_file" >> "$log_file"
+    echo "Running $cmd" >> "$log_file"
 else
     if [ "$LOG_DIR" != "" -a -z "$quiet"  ]; then
         echo "Will log output to $log_file"
@@ -248,8 +251,10 @@ if [ -z "$dry_run" ]; then
     fi
 fi
 
+stop_time=$(date '+%G-%m-%d:%H%M')
+echo "Done.  Ended at $stop_time" >> "$log_file"
 if [ -z "$quiet" ]; then
-    echo "Done.  Ended at `date '+%G-%m-%d:%H%M'`"
+    echo "Done.  Ended at $stop_time"
 fi
 
 if [ "$TIMEOUT" -gt 0 ] 2>/dev/null; then
