@@ -136,7 +136,7 @@ The project has adopted the [Semantic Versioning](http://semver.org) principles 
 
 The fields above mean the following:
 
-* An increment of the major version number `N` represents incompatible API changes.
+* An increment of the major version number `M` represents incompatible API changes.
 * An increment of the minor version number `N` represents additional functionality in a backwards-compatible manner.
 * An increment of the patch version number `P` represents backwards-compatible bug fixes.
 * Existence of a label `L` represents a pre-release or build metadata.
