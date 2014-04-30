@@ -130,12 +130,12 @@ Here are some suggestions for what could be improved or added to `rsmirror`:
 Versioning
 ----------
 
-This project uses the [Semantic Versioning](http://semver.org) principles for versioning.  The version number has the following format: `M.N.P-L`. The fields above mean the following:
+This project uses the [Semantic Versioning](http://semver.org) principles for versioning.  The version number has the following format: `MAJOR.MINOR.PATCH-LABEL`. The fields have the following meaning
 
-* An increment of the major version number `M` represents incompatible API changes.
-* An increment of the minor version number `N` represents additional functionality in a backwards-compatible manner.
-* An increment of the patch version number `P` represents backwards-compatible bug fixes.
-* Existence of a label `L` represents a pre-release or build metadata.
+* An increment of the major version number, `MAJOR`, represents incompatible API changes.
+* An increment of the minor version number, `MINOR`, represents additional functionality in a backwards-compatible manner.
+* An increment of the patch version number, `PATCH`, represents backwards-compatible bug fixes.
+* Existence of a label `LABEL` represents a pre-release or build metadata.
 
 
 License
