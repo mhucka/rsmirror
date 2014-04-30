@@ -130,11 +130,7 @@ Here are some suggestions for what could be improved or added to `rsmirror`:
 Versioning
 ----------
 
-The project has adopted the [Semantic Versioning](http://semver.org) principles for versioning.  The version number has the following format:
-
-`M.N.P-L`
-
-The fields above mean the following:
+This project uses the [Semantic Versioning](http://semver.org) principles for versioning.  The version number has the following format: `M.N.P-L`. The fields above mean the following:
 
 * An increment of the major version number `M` represents incompatible API changes.
 * An increment of the minor version number `N` represents additional functionality in a backwards-compatible manner.
