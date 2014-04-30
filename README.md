@@ -101,6 +101,12 @@ Return values
 * above 100: if the number is above 100, it is an error code produced by `rsmirror` itself.
 
 
+Reporting problems
+------------------
+
+Please use the [issue tracker](https://github.com/mhucka/rsmirror/issues) to report problems and other issues with `rsmirror`.
+
+
 Contributing
 ------------
 
@@ -124,16 +130,16 @@ Here are some suggestions for what could be improved or added to `rsmirror`:
 Versioning
 ----------
 
-The project has adopted the [Semantic Versioning](http://semver.org) principles for versioning.  The version number format is as follows:
+The project has adopted the [Semantic Versioning](http://semver.org) principles for versioning.  The version number has the following format:
 
-~~~~~
-<major>.<minor>.<patch>-<label>
-~~~~~
+`M.N.P-L`
 
-* An increment of the major version represents incompatible API changes.
-* An increment of the minor version represents additional functionality in a backwards-compatible manner.
-* An increment of the patch version represents backwards-compatible bug fixes.
-* Existence of a label represents a pre-release or build metadata.
+The fields above mean the following:
+
+* An increment of the major version number `N` represents incompatible API changes.
+* An increment of the minor version number `N` represents additional functionality in a backwards-compatible manner.
+* An increment of the patch version number `P` represents backwards-compatible bug fixes.
+* Existence of a label `L` represents a pre-release or build metadata.
 
 
 License
