@@ -51,7 +51,7 @@
 
 <p>Sometimes you want to mirror one or more directories to a remote machine on a regular basis.  The tried and true, secure approach is to use <code>rsync</code> over <code>ssh</code> between Unix/Linux-based systems.  However, properly configuring <code>rsync</code> for mirroring can be a challenge, particularly when transferring Mac OS X files, because one has to provide a number of arguments to <code>rsync</code> to preserve as many of the Mac OS X file attributes as possible.  (It also requires using a suitable version of <code>rsync</code>.)  Moreover, one may want to establish a timeout to limit the maximum duration for the entire process, log the results of all activities, and more.</p>
 
-<p>This script encapsulates these arguments, plus it adds additional features useful for situations where you regularly mirror a directory to a remote machine.  For example, it tells rsync to delete files from the remote copy if they are no longer present in the source directory being mirrored.  It also tries to do a best effort for the case when the remote is not a Mac OS X system (and thus lacks the necessary support for some file HFS+ file system features).  Finally, this script provides some useful conveniences, such as support for configuration files, logging, and the ability to mail a log to a destination address upon completion.  The script is written to use the plain Bourne <code>sh</code> shell, for increased portability.</p>
+<p>This script encapsulates these arguments, plus it adds additional features useful for situations where you regularly mirror a directory to a remote machine.  For example, it tells rsync to delete files from the remote copy if they are no longer present in the source directory being mirrored.  It also tries to do a best effort for the case when the remote is not a Mac OS X system (and thus lacks the necessary support for some HFS+ file system features).  Finally, this script provides some useful conveniences, such as support for configuration files, logging, and the ability to mail a log to a destination address upon completion.  The script is written to use the plain Bourne <code>sh</code> shell, for increased portability.</p>
 
 <h2>
 <a name="requirements-and-strong-recommendations" class="anchor" href="#requirements-and-strong-recommendations"><span class="octicon octicon-link"></span></a>Requirements and strong recommendations</h2>
@@ -127,7 +127,13 @@ your changes to the code or documentation.</li>
 <li>Commit your changes (<code>git commit -am 'Describe your changes here'</code>).</li>
 <li>Push to the branch (<code>git push origin my-new-feature</code>).</li>
 <li>Create a new pull request to notify me of your suggested changes.</li>
-</ol><h2>
+</ol><p>Here are some suggestions for what could be improved or added to <code>rsmirror</code>:</p>
+
+<ul>
+<li><p>If the option to email the log is enabled, make <code>rsmirror</code> compress the log before mailing it.</p></li>
+<li><p>Add an option to print the output from rsync to the console, for debugging.  Currently, <code>rsmirror</code> only writes the rsync output to the log file.</p></li>
+<li><p>For better security, make <code>rsmirror</code> read the configuration file and look only for variable settings, instead of what it does currently, which is to source the configuration file.</p></li>
+</ul><h2>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
 
 <p>Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.</p>
