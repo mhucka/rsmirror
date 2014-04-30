@@ -1,0 +1,730 @@
+#!/bin/sh -u
+# =============================================================================
+# Description:  Run rsync to back up a Mac OS X directory to a server.
+# Author:       Michael Hucka <mhucka@caltech.edu>
+# Organization: California Institute of Technology
+# Date created: Sometime in 2008
+# Source:       https://github.com/mhucka/rsmirror
+# License:      LGPL 2.1
+# =============================================================================
+#
+# This is a script for mirroring a directory to a remote computer, with a
+# particular emphasis on handling Mac OS X files.  It uses rsync over ssh,
+# with settings that attempt to preserve Mac OS X file attributes when the
+# remote is also a Mac.
+#
+# Note that this is not intended to be used with an "rsync server", which is
+# a machine running rsync as a service; it is intended for the situation
+# where you simply have a remote computer with rsync and ssh installed.  In
+# normal usage, you would invoke this script from a crontab entry to
+# regularly mirror a directory on your local computer to the remote computer.
+#
+# Features:
+# * Uses configuration files, for easy management of multiple mirrors
+# * Uses rsync flags suitable for preserving Mac OS X file attributes, and
+#   flags suitable for mirroring (e.g., deleting nonexistent files on server).
+# * Uses compression, but turns it off for common binary file types (using
+#   a longer list than rsync's default).
+# * Writes a log file.
+# * Optionally will mail the log file to a given address when it's finished.
+#
+# Notes:
+# * This requires rsync 3.0.5 or higher on both the client and backup server.
+#
+# * This requires the fileflags, crtimes and hfs-compression patches for rsync
+#   to be applied on Mac OS X systems.  See, for instance,
+#       http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz
+#   As of 2011-01-19, the rsync supplied by MacPorts is 3.0.7 and it includes
+#   all the necessary patches.
+#
+# * You are strongly advised to make sure that the remote machine uses a
+#   case-sensitive file system. Otherwise, you may encounter problems with
+#   updating files that only changed in the case of their names.
+#
+# * This has the option of writing a log file to a directory set by $LOG_DIR.
+#
+# This returns an error status with the following properties: if the number
+# is between 1 and 99, it is the status code returned by rsync in the case of
+# an error; if the number is above 100, it is a code produced by this script.
+#
+# =============================================================================
+# Copyright (C) 2008-2014 by the California Institute of Technology,
+# Pasadena, USA.
+#
+# This library is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License, or any
+# later version.
+#
+# This software is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY
+# OR FITNESS FOR A PARTICULAR PURPOSE.  The software and documentation
+# provided hereunder is on an "as is" basis, and the California Institute of
+# Technology has no obligations to provide maintenance, support, updates,
+# enhancements or modifications.  In no event shall the California Institute
+# of Technology be liable to any party for direct, indirect, special,
+# incidental or consequential damages, including lost profits, arising out of
+# the use of this software and its documentation, even if the California
+# Institute of Technology has been advised of the possibility of such damage.
+# See the GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this library in the file named "COPYING.txt" included with the
+# software distribution.
+# =============================================================================
+
+version_number="2.0.0"
+website="https://github.com/mhucka/rsmirror"
+
+# ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+# Configuration variables and their default values.
+# DON'T SET THE VALUES HERE; use a configuration file and the -c flag.
+# ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+
+# [Required] Path(s) to the local directory(ies) to back up.  To put more
+# than one directory here, enclose the list in double quotes and separate
+# directory paths by spaces.  Note: only limited tilde (~) expansion is
+# currently performed on the pathnames; specifically, tilde followed by a
+# user name is not substituted, but other occurrences of tilde are.  If you
+# want to use ~name, don't; use the full path to the user's directory instead.
+#
+LOCAL_DIRS=CHANGEME
+
+# [Required] The remote backup server's host name.
+#
+REMOTE_HOST=CHANGEME
+
+# [Required] Path where backups will be put on the backup server.  If this is
+# a relative pathname, then it will be relative to the user's home directory
+# on the *remote* system.  (E.g.: if your login is "jimmy" and
+# REMOTE_DIR="backups", then the mirrored files will be put in
+# ~jimmy/backups/ on the remote host.)  If LOCAL_DIRS contains more than one
+# local source directory, then they will all end up placed under REMOTE_DIR
+# on the remote host.
+#
+REMOTE_DIR=CHANGEME
+
+# [Optional] Full path to rsync on this computer.
+#
+LOCAL_RSYNC=rsync
+
+# [Optional] Path to rsync on the backup server.  Leave blank to use whatever
+# the default may be on the remote server.
+#
+REMOTE_RSYNC=
+
+# [Optional] Full path to a file containging a list of files to exclude from
+# the mirror.  See the rsync man page for info about how to use the
+# --exclude-from option.  Note that rsmirror already excludes some things,
+# notably .Spotlight-V100 files and /private/var/vm on Mac OS X.
+#
+EXTRA_EXCLUDES=
+
+# [Optional] Full path to a directory where log files will be written by this
+# script.  If this variable is set, a log file with the following name,
+#     [CONFIG]-[DATE:TIME].log
+# will be written in the directory, where [CONFIG] is the name of the given
+# config file (via -c) minus any suffix, and [DATE:TIME] is the current date
+# and time.  If not set, no log file will be written.  Note that you are
+# highly advised to set up logging.  Possible example: "$HOME/.logs".
+#
+LOG_DIR=
+
+# [Optional] Overall timeout, in seconds.  If set to a value X, rsmirror will
+# quit after either the underlying rsync process has finished, or X seconds
+# have elapsed, whichever comes sooner.  Set to an empty string if no timeout
+# is desired.  Note: this is different from the timeout options that rsync
+# provides, and does not represent any of them.
+#
+TIMEOUT=
+
+# [Optional] The remote shell program and arguments to use when invoking
+# rsync on the local host.  This is passed to rsync using the --rsh argument.
+# The default is "ssh".  Only set this if you need to specify a particular
+# path to ssh on your system or to provide arguments to the ssh command.
+#
+RSYNC_SSH=
+
+# [Optional] Set to an email address where the log should be email after
+# rsmirror finishes. This will be done using the system "mail" command.
+#
+MAILTO=
+
+
+# ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+# Body of script.  No more configuration should be necessary after this point.
+# ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+
+# For security reasons, it's best to use absolute paths to binaries instead
+# of whatever is on the user's $path.  The following tries to deal with
+# differences between Mac OS X and different flavors of Linux.
+
+DATE=/bin/date
+FIND=/usr/bin/find
+HEAD=/usr/bin/head
+ID=/usr/bin/id
+MKDIR=/bin/mkdir
+RM=/bin/rm
+RMDIR=/bin/rmdir
+SLEEP=/bin/sleep
+if [ -e /bin/mail ]; then
+    MAIL=/bin/mail
+else
+    MAIL=/usr/bin/mail
+fi
+if [ -e /bin/sed ]; then
+    SED=/bin/sed
+else
+    SED=/usr/bin/sed
+fi
+if [ -e /bin/basename ]; then
+    BASENAME=/bin/basename
+else
+    BASENAME=/usr/bin/basename
+fi
+if [ -e /bin/expr ]; then
+    EXPR=/bin/expr
+else
+    EXPR=/usr/bin/expr
+fi
+if [ -e /bin/mktemp ]; then
+    MKTEMP=/bin/mktemp
+else
+    MKTEMP=/usr/bin/mktemp
+fi
+
+# Normally one would use 'uname' to find out the OS, but 'uname' lives in
+# different locations on different systems. Since we only care about
+# distinguishing OSX, this next test using sw_vers is simpler.
+
+if [ -e /usr/bin/sw_vers ]; then
+    on_mac=1
+else
+    on_mac=0
+fi
+
+# Initialize some other vars.
+
+program=${0##*/}
+dry_run=0
+exit_code=0
+remote_mac=0
+assume_remote_mac=0
+assume_remote_nonmac=0
+chatty=1
+be_safe=1
+process_owner=$($ID -u)
+log_file=
+watchdogpid=0
+start_time=$($DATE '+%G-%m-%d:%H%M')
+
+# Next, define some basic functions.
+
+print_version() {
+    echo "Version: $program $version_number" 1>&2
+    echo "Author:  Mike Hucka <mhucka@caltech.edu>" 1>&2
+    echo "Website: $website" 1>&2
+}
+
+print_usage() {
+cat <<EOF >&2
+Usage:
+    $program -c CONFIG [options]
+
+Mirror one or more directories to a remote computer, using rsync over ssh,
+with particular emphasis on attempting to preserve Mac OS X file attributes.
+
+Options:
+    -c, --config FILE   (Required) Use the configuration file FILE.
+    -h, --help          Print this help message and exit.
+    -m, --mac-remote    Skip remote OS test; assume it's Mac OS X
+    -n, --dry-run       Show what would be done, but don't do it.
+    -o, --other-remote  Skip remote OS test; assume it's not Mac OS X
+    -q, --quiet         Don't display informative messages.
+    -s, --skip-checks   Skip some paranoid safety checks.
+    -v, --version       Display the current version number and exit.
+
+EOF
+    print_version
+}
+
+parse_args() {
+    # Parse comand-line options.
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            -c | --config )
+                shift
+                config_file=$1
+                ;;
+            -h | --help )
+                print_usage
+                quit 0
+                ;;
+            -m | --mac-remote )
+                assume_remote_mac=1
+                ;;
+            -n | --dry-run )
+                dry_run=1
+                ;;
+            -o | --other-remote )
+                assume_remote_nonmac=1
+                ;;
+            -q | --quiet )
+                chatty=0
+                ;;
+            -s | --skip-checks )
+                be_safe=0
+                ;;
+            -v | --version )
+                chatty=0
+                print_version
+                quit 0
+                ;;
+        esac
+        shift
+    done
+}
+
+welcome() {
+    # Set the start time and print a welcome message.
+    # Note: this can't be run until after the log file is set up.
+
+    say "$program started at $start_time."
+    log "$program started at $start_time."
+
+    say "Using configuration file $config_file"
+    if [ -n "$LOG_DIR" ]; then
+        if [ $dry_run -eq 1 ]; then
+            say "Dry run; no log file produced."
+            say "Log file would be $log_file"
+        else
+            say "Logging output to $log_file"
+        fi
+    fi
+}
+
+goodbye() {
+    # Set the stop time and print a goodbye message.
+
+    stop_time=$($DATE '+%G-%m-%d:%H%M')
+    say "$program ended at $stop_time."
+    log "$program ended at $stop_time."
+}
+
+read_config() {
+    # Read the configuration file.
+
+    if [ -z "$config_file" ]; then
+        echo "Missing configuration file argument."
+        print_usage
+        quit 101
+    fi
+    if [ ! -r "$config_file" ]; then
+        echo "Unable to read configuration file $config_file."
+        quit 102
+    fi
+    # Security check: make sure the config file owner is same as this user.
+    if [ $be_safe -eq 1 -a ! -O "$config_file" ]; then
+        echo "Process owner $process_owner does not own file $config_file."
+        echo "If this is deliberate, re-run rsmirror with the -s flag."
+        echo "Quitting now to prevent potential catastrophe."
+        quit 103
+    fi
+    # Security check: don't permit world-writable config files.
+    if [ $be_safe -eq 1 ]; then
+        # Plain sh lacks bit-wise operators, so can't we use stat and mask
+        # the octal value.  Using find for this is heavier, but workable.
+        world_writable=$($FIND "$config_file" -perm -002 -print)
+        if [ -n "$world_writable" ]; then
+            echo "Config file is world-writable. Treating as suspicious."
+            echo "If you're sure it's okay, re-run rsmirror with the -s flag."
+            echo "Quitting now to prevent potential catastrophe."
+            quit 104
+        fi
+    fi
+    # OK, now finally read the config file.
+    . "$config_file"
+
+    # Set up some default values if they weren't set by the config file.
+    if [ -z "${LOCAL_RSYNC}" ]; then
+        LOCAL_RSYNC=rsync
+    fi
+    if [ -z "${REMOTE_RSYNC}" ]; then
+        REMOTE_RSYNC=rsync
+    fi
+    if [ -z "$RSYNC_SSH" ]; then
+        RSYNC_SSH=ssh
+    fi
+}
+
+check_config_vars() {
+    # Check that none of the important variables have been left unset.
+
+    pre="Error: must set variable"
+    post="in config file."
+    [ "$LOCAL_DIRS"  != "CHANGEME" ] || quit 105 "$pre LOCAL_DIRS $post"
+    [ "$REMOTE_HOST" != "CHANGEME" ] || quit 105 "$pre REMOTE_HOST $post"
+    [ "$REMOTE_DIR"  != "CHANGEME" ] || quit 105 "$pre REMOTE_DIR $post"
+
+    if [ "$($EXPR "$LOCAL_RSYNC" : ".*/.*")" -ne 0 ]; then
+        # The value has a slash in it => relative or absolute pathname.
+        pre="Error: LOCAL_RSYNC config value $LOCAL_RSYNC"
+        [ ! -d "$LOCAL_RSYNC" ] || quit 105 "$pre is a directory."
+        [   -f "$LOCAL_RSYNC" ] || quit 105 "$pre not found."
+        [   -x "$LOCAL_RSYNC" ] || quit 105 "$pre not executable."
+    else
+        type "$LOCAL_RSYNC" > /dev/null 2>&1
+        [ $? -eq 0 ] || quit 105 "Error: LOCAL_RSYNC value $LOCAL_RSYNC not found."
+    fi
+
+    if [ -n "$EXTRA_EXCLUDES" ]; then
+        pre="Error: EXTRA_EXCLUDES config value $EXTRA_EXCLUDES"
+        [ ! -d "$EXTRA_EXCLUDES" ] || quit 105 "$pre is a directory."
+        [   -f "$EXTRA_EXCLUDES" ] || quit 105 "$pre not found."
+    fi
+
+    if [ -n "$TIMEOUT" ]; then
+        isnumber "$TIMEOUT" || quit 105 "Error: TIMEOUT value $TIMEOUT is not a number"
+    fi
+}
+
+check_versions() {
+    # Test the version of rsync (and maybe other things in the future).
+
+    v=$("$LOCAL_RSYNC" --version 2>&1 | $HEAD -n 1 | $SED 's/.* \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p; d')
+    x=$($EXPR "$v" : '\([0-9]*\)\.[0-9]*\.[0-9]*')
+    y=$($EXPR "$v" : '[0-9]*\.\([0-9]*\)\.[0-9]*')
+    z=$($EXPR "$v" : '[0-9]*\.[0-9]*\.\([0-9]*\)' '|' 0)
+
+    if [ "$x" -lt 3 -o "$y" -lt 1 -a "$z" -lt 5 ]; then
+        quit 106 "Error: need rsync 3.0.5 or higher, but $LOCAL_RSYNC is $x.$y.$z"
+    fi
+}
+
+start_timeout_timer() {
+    # Start a timeout timer to kill this script after a given time.
+
+    mainpid=$$
+    if [ "$TIMEOUT" -gt 0 ] 2>/dev/null; then
+        msg="Configured timeout reached: terminating $program"
+        ($SLEEP "$TIMEOUT"; echo "$msg"; kill $mainpid > /dev/null 2>&1) & watchdogpid=$!
+    fi
+}
+
+set_up_log() {
+    # Set up the log file.
+
+    configname=$($BASENAME "$config_file")
+    logbasename="${configname%.*}"
+    logname="$logbasename-$start_time.log"
+
+    # Create the log directory in case it doesn't exist.
+    if [ -n "$LOG_DIR" ]; then
+        $MKDIR -p "$LOG_DIR"
+        if [ $? -eq 0 ]; then
+            log_file="$LOG_DIR/$logname"
+        else
+            quit 107 "Error: unable to use configured LOG_DIR value $LOG_DIR"
+        fi
+    else
+        # User didn't specify a $LOG_DIR.  We create a temporary log in /tmp,
+        # but we clean up on exit.
+
+        umask 0077                      # Make temp dir readable only to user.
+        temp_log_dir=$($MKTEMP -d "/tmp/rsmirror-$logbasename-XXXX")
+        if [ $? -eq 0 ]; then
+            log_file="$temp_log_dir/$logname"
+            trap "clean_up_temp_log $temp_log_dir" EXIT
+        fi
+        # If we fail to create even a temporary log, just give up on the idea.
+    fi
+
+    # Make log file readable only to user.
+    umask 0177
+}
+
+clean_up_temp_log() {
+    # Temp file cleanup routine, called from a trap set on EXIT.
+    # Arg $1 is the temporary log directory.
+
+    $RM -f "$log_file"
+    $RMDIR "$1"
+}
+
+# [Notes 2014-04-13]
+# The starting assumption is that if a system is a Mac, the rsync patches
+# for fileflags, crtimes and hfs-compression have been applied.  If a system
+# isn't a Mac, then the assumption is that the flags are not available.
+#
+# The following flags are Mac OS X-only, and the respective patches need
+# to be applied to the rsync sources to get these flags.
+#    --crtimes --hfs-compression --protect-decmpfs --fileflags
+# For destinations that are not Mac OS, we need to turn off those flags.
+#
+# The use of either hfs-compression or protect-decmpfs turns on fileflags,
+# so --fileflags is not added separately here when they're used.
+#
+# I cannot get Linux systems to send to a Mac with --xattrs.  So, only if
+# both are Macs, or both are Linux, does --xattrs get added below.
+#
+# --fake-super is needed, but this script adds it separately in the actual
+# command invocation later, because it has to be added as an argument
+# *within* the value of --rsync-path.  I had trouble getting the string
+# quoting to work out properly doing it here, so after a lot of trying, I
+# gave up and just split it out.
+#
+# Don't add --fake-super to the local rsync's arguments.  First, it doesn't
+# seem to have any value, and second, on Linuxes with SE enabled (e.g.,
+# RHEL), you can get errors of the form "rsync failed to read xattr
+# user.rsync.%stat ... Operation not permitted".
+
+configure_rsync() {
+    # Set up the flags that we will hand to rsync.
+
+    # The following are the basic variables always handed to rsync:
+    basic1="-vaxHA --stats --numeric-ids --protect-args"
+    basic2="--delete --delete-excluded --ignore-errors"
+    basic="$basic1 $basic2"
+    nocompress1="gz/zip/z/rpm/deb/iso/bz2/tgz/7z/mp3/mp4/m4p/mpg/mpeg/mov/avi"
+    nocompress2="ogg/dmg/jpg/JPG/jpeg/gif/GIF/tif/tiff/png/PNG/NEF/pict/MYI/MYD"
+    comp="-z --skip-compress=$nocompress1/$nocompress2"
+
+    # Next, add OS-specific options for rsync.
+    examine_remote_os
+    os_flags=""
+    os_excludes=""
+    if [ $on_mac -eq 1 ]; then          # This is a Mac.
+        if [ $remote_mac -eq 1 ]; then
+            os_flags="--xattrs --force-change --crtimes --hfs-compression --protect-decmpfs"
+        else
+            os_flags="--xattrs"
+        fi
+        os_excludes="--exclude .Spotlight-V100 --exclude /private/var/vm"
+    else                                # This is not a Mac.
+        if [ $remote_mac -eq 1 ]; then
+            os_flags="--iconv=UTF-8,UTF-8-MAC"
+        else
+            os_flags="--xattrs"         # Neither this nor the remote are Macs.
+        fi
+    fi
+    if [ -n "EXTRA_EXCLUDES" ]; then
+        excludes="$os_excludes --exclude-from=$EXTRA_EXCLUDES"
+    else
+        excludes="$os_excludes"
+    fi
+    flags="$basic $comp $os_flags $excludes"
+}
+
+examine_remote_os() {
+    # Simultaneously test our ability to connect to the remote system and
+    # whether it is running OSX.  This test looks for /usr/bin/sw_vers, which
+    # is only found (AFAIK) on Macs.  This purposefully doesn't run ssh as
+    # the main command; rather, it runs rsync, because the remote may be set
+    # up with restrictions about which commands can be run, and since we will
+    # only run rsync later on, the safest thing is to use rsync here too.
+
+    if [ $assume_remote_mac -ne 0 -o $assume_remote_nonmac -ne 0 ]; then
+        if [ $assume_remote_mac -eq 1 ]; then
+            msg_arg="--mac-remote"
+            msg_running="running"
+            remote_mac=1
+        else          # If we get here, $assume_remote_nonmac must be nonzero.
+            msg_arg="--other-remote"
+            msg_running="not running"
+            remote_mac=0
+        fi
+        log "Skipping preflight test because $program given argument $msg_arg."
+        log "Assuming remote is $msg_running Mac OS X."
+        return
+    fi
+
+    say "Doing preflight test of remote host $REMOTE_HOST."
+    log "Testing remote host $REMOTE_HOST."
+
+    cmd_for_info="$LOCAL_RSYNC -n --rsh=\"${RSYNC_SSH}\"\
+ --rsync-path=\"${REMOTE_RSYNC}\" $REMOTE_HOST:/usr/bin/sw_vers /tmp"
+
+    log "Running $cmd_for_info"
+
+    # Note the use of -n, which means it doesn't actually perform the transfer:
+    rsync_test=$($LOCAL_RSYNC -n --rsh="${RSYNC_SSH}" \
+        --rsync-path="${REMOTE_RSYNC}" $REMOTE_HOST:/usr/bin/sw_vers /tmp 2>&1)
+    exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+        remote_mac=1
+        msg="appears"
+    elif [ $exit_code -eq 23 -a \
+           $($EXPR "$rsync_test" : ".*failed: no such file.*") -eq 0 ]; then
+            # rsync appears to have succeeded, but failed to find the file
+            # This is probably not a Mac.
+        remote_mac=0
+        msg="does not appear"
+    else
+        log "Error testing remote rsync connection:"
+        log "$rsync_test"
+
+        say "Error: rsync preflight failed. Rsync or ssh replied as follows:"
+        say "-----------------------------------------------------------------"
+        say "$rsync_test"
+        say "-----------------------------------------------------------------"
+        say "Please check your ssh and rsmirror configurations."
+        say "For more information, please see $log_file"
+
+        quit $exit_code
+    fi
+    log "Test completed."
+    log "Remote host $REMOTE_HOST $msg to be running Mac OS X."
+}
+
+run_rsync() {
+    # OK, let's do this thing.
+
+    local_dirs=$(expand_tilde "$LOCAL_DIRS")
+
+    # This is not the real command. This is only for echoing info:
+    cmd_for_info="$LOCAL_RSYNC $flags --rsh=\"${RSYNC_SSH}\" \
+ --rsync-path=\"${REMOTE_RSYNC} --fake-super\" \
+ $local_dirs $REMOTE_HOST:$REMOTE_DIR/"
+
+    if [ $dry_run -eq 1 ]; then
+        say "Dry run, otherwise would run $cmd_for_info"
+        log "Dry run; not running $cmd_for_info"
+    else
+        say "Proceeding with data transfer."
+        log "Running $cmd_for_info"
+
+        $LOCAL_RSYNC  $flags --rsh="${RSYNC_SSH}" \
+            --rsync-path="${REMOTE_RSYNC} --fake-super" \
+            $local_dirs $REMOTE_HOST:$REMOTE_DIR/ >> "$log_file" 2>&1
+        exit_code=$?
+
+        if [ $exit_code -ne 0 ]; then
+            interpret_rsync_error $exit_code
+            if [ "$LOG_DIR" != "" ]; then
+                say "Check $log_file for additional details."
+            else
+                say "Turn on logging for additional details."
+            fi
+        fi
+    fi
+}
+
+interpret_rsync_error() {
+    # Tries to interpret rsync error codes.  Parameter $0 is the code.
+    # Prints informative messages for some codes, generic messages for others.
+
+    case $1 in
+        1)  say "Error: local rsync syntax error."
+            return
+            ;;
+        2)  say "Error: problem starting up remote rsync."
+            return
+            ;;
+        3 | 10 | 11 | 30) say "Error: rsync reported an I/O error."
+            return
+            ;;
+        4 | 12) say "Error: problem with remote rsync."
+            return
+            ;;
+        5 | 13) say "Error: problem with rsync invocation."
+            return
+            ;;
+        14 | 23 | 24 | 25) say "Error: rsync partial transfer due to error(s)."
+            return
+            ;;
+        20) # Received SIGUSR1 or SIGINT -- normal for us on timeout.
+            return
+            ;;
+    esac
+
+    # Anything else, print a generic message and let the user look in the log.
+    say "Error: rsync returned an error code."
+}
+
+expand_tilde() {
+    # Substitute occurrences of tilde characters in $1 and return the result.
+    # Currently, it only substitutes occurrences of ~ alone, or ~ followed by
+    # a slash (followed by more pathname characters).
+
+    echo $(printf '%s\n' $1 | \
+        $SED "s|^~\$|$HOME|g;s|~[[:space:]]|$HOME |g;s|[[:space:]]~\$| $HOME|g;s|~/|$HOME/|g")
+}
+
+mail_log() {
+    # Mail the log file if so configured.
+
+    if [ -n "$MAILTO" -a -s "$log_file" ]; then
+        log "Mailing log to $MAILTO."
+        $MAIL -s "rsmirror -c $config_file finished" "$MAILTO" < "$log_file"
+    fi
+}
+
+quit() {
+    # Shut down the watchdog timer and exit with the status code in $1.
+    # If given arg $2, it's a string to be both printed and logged.
+
+    code=$1
+    if [ "$watchdogpid" -ne 0 ]; then
+        kill $watchdogpid
+    fi
+    if [ ! -z "${2:-}" ]; then
+        say "$2"
+        log "$2"
+    fi
+    goodbye
+    exit $code
+}
+
+say() {
+    # Echo a message, unless quiet mode is on.
+
+    if [ $chatty -eq 1 ]; then
+        printf '%s\n' "$*"
+    fi
+}
+
+log() {
+    # Log a message to the log file.
+
+    if [ -n "$log_file" ]; then
+        printf '%s\n' "$*" >> "$log_file"
+    fi
+}
+
+log_args() {
+    # Log the arguments given to this invocation
+    # Arg should be the command line given to rsmirror.
+
+    log "Arguments: $*"
+}
+
+isnumber() {
+    # Test if $1 is a number.
+    # Code from http://stackoverflow.com/a/11479815/743730
+
+    test "$1" && printf '%f' "$1" >/dev/null 2>&1;
+}
+
+#
+# Main entry point.
+#
+
+parse_args "$@"
+read_config
+set_up_log
+log_args "$@"
+check_config_vars
+start_timeout_timer
+welcome
+check_versions
+configure_rsync
+run_rsync
+mail_log
+
+quit $exit_code
+
+
+# ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+# End of script.
+# ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~

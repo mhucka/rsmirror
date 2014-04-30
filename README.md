@@ -1,60 +1,102 @@
 rsmirror
 ========
 
-A shell script for mirroring a Mac OS X directory to a remote computer.  It uses rsync over ssh, with settings that attempt to preserve Mac OS X file attributes even if the server is not a Mac or does not use an HFS+ file system.
+A shell script for mirroring one or more directories to a remote computer, with a particular emphasis on handling Mac OS X files.  It uses `rsync` over `ssh`, with settings that attempt to preserve Mac OS X file attributes.
 
 ----
 *Author*:       Michael Hucka (http://www.cds.caltech.edu/~mhucka)
 
 *Copyright*:    Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.
 
-*License*:      This code is licensed under the LGPL version 2.1.  Please see the Please see the file [../COPYING.txt](https://raw.github.com/mhucka/rsmirror/master/COPYING.txt) for details.
+*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../COPYING.txt](https://raw.github.com/mhucka/rsmirror/master/COPYING.txt) for details.
 
 *Project page*: http://mhucka.github.io/rsmirror
 
 *Repository*:   https://github.com/mhucka/rsmirror
 
 
-Requirements
-------------
-
-1. This requires `rsync` 3.0.5 or higher on both the client and backup server.
-
-2. This requires the `fileflags` and `crtimes` patches for `rsync` to be applied on Mac OS X systems.  For more information, see the `rsync` patch directory (which, for version 3.0.5, is http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz).  As of 2011-01-19, the version of `rsync` supplied by MacPorts is 3.0.7 and includes the necessary patches.
-
-
 Background
 ----------
 
-Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use `rsync` over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to `rsync` to preserve as many of the Mac OS X file attributes as possible (and the copy of `rsync` on the server may need to be patched to support the arguments).  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine (such as making it delete files from the remote copy if they are no longer present in the source directory being mirrored).
+Sometimes you want to mirror one or more directories to a remote machine on a regular basis.  The tried and true secure approach is to use `rsync` over `ssh` between Unix/Linux-based systems.  However, properly configuring `rsync` for mirroring can be a challenge, particularly when transferring Mac OS X files, because one has to provide a number of arguments to `rsync` to preserve as many of the Mac OS X file attributes as possible.  (It also requires using a suitable version of `rsync`.)  Moreover, one may want to establish a timeout to limit the maximum duration for the entire process, log the results of all activities, and more.
+
+This script encapsulates these arguments, plus it adds additional features useful for situations where you regularly mirror a directory to a remote machine.  For example, it will delete files from the remote copy if they are no longer present in the source directory being mirrored.  It also tries to do a best effort for the case when the remote is not a Mac OS X system (and thus lacks the necessary support for some file HFS+ file system features).  Finally, this script provides some useful conveniences, such as support for configuration files, logging, and the ability to mail a log to a destination address upon completion.  The script is written to use the plain Bourne `sh` shell, for increased portability.
+
+
+Requirements and strong recommendations
+---------------------------------------
+
+1. This requires `rsync` 3.0.5 or higher on both the client and backup server.  (Important: **OS X provides a much older version of `rsync`, even in Mac OS X 10.9 Mavericks&mdash;do not use the default Mac OS X version**.)
+
+2. This requires the "fileflags", "hfs-compression" and "crtimes" patches for `rsync` to be applied on Mac OS X systems.  As of 2011-01-19, the version of `rsync` supplied by MacPorts is 3.0.7 and it includes the necessary patches.  If you need to compile your own copy, see the `rsync` patch directory for more information.  (For version 3.0.5,  http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz)
+
+3. You are strongly advised to configure the remote machine's file system to be case-sensitive.  This is the default on Linux, but on Mac OS X, a **different-from-the-defaults setting must be used when formatting the disk**.  Without a case-sensitive destination file system, you will encounter problems copying a directory that contains both a file with a certain name and a subdirectory with the same name, as well as when a file changes only in the case of its names from one occasion to another.
 
 
 Installation
 ------------
 
-The installation process is simple.
+Prior to installing and attempting to run `rsmirror`, you may want to set up password-less `ssh` connections between your local and remote computers.  If this is unfamiliar, please search the Internet for instructions on how to set up password-less ssh logins.
 
-**1.** Copy `rsmirror.sh` to a directory of your choosing, and make sure it is executable.
+The installation process for `rsmirror` itself is simple:
+
+**1.** Copy `rsmirror` to a directory of your choosing, and make sure it is executable.
 
 **2.** Copy `sample.config` to a location of your choosing, renaming it to something suitable (perhaps named after the directory you are going to mirror).  If you want to create multiple mirroring configurations, copy `sample.config` as many times as you need and give each copy a different name.
 
-**3.** Edit the configuration file(s).  Set the values for the different variables inside.  The comments explain the purposes of the variables.
+**3.** Edit the configuration file(s).  Set the values for the different variables inside.  The comments inside the sample configuration file explain the purposes of the variables.
 
-**4.** Test your configurations, first by invoking `rsmirror.sh -n -c CONFIG` (where the `-n` flag tells rsmirror.sh to echo what it will do without actually doing it, and `CONFIG` is the path to a configuration file from steps 2-3), and then by invoking `rsmirror.sh -c CONFIG` and checking that it appears to have done what you expected.
+**4.** Do a basic test of your configuration by invoking `rsmirror -n -c CONFIG`.  The `-n` flag tells `rsmirror` to do a dry run, and `CONFIG` is the path to a configuration file from steps 2-3.  The test process will attempt to run `ssh` and start the remote `rsync`, but will not transfer any files; if any configuration or connectivity problems exist, they will probably be revealed.
 
-Once that is done, you can invoke `rsmirror.sh -c CONFIG` whenever you want to mirror the directory.  You may find it convenient to set up a cron job to perform the task on a nightly basis.
+Once that is done, you can invoke `rsmirror -c CONFIG` whenever you want to mirror the directory.  You may find it convenient to set up a cron job to perform the task on a nightly basis.  (Note, however, that this will not work unless you also set up password-less `ssh` connections between your local and remote computers, as mentioned above.)
 
 
 Usage
 -----
 
-`rsmirror.sh` takes three arguments, one required and two optional:
+`rsmirror` takes five arguments, one required and two optional:
 
-* `-c CONFIG` is a required argument; `CONFIG` must be the pathname of a configuration file.
+* `-c CONFIG` is a required argument; `CONFIG` must be the pathname of a configuration file.  A sample configuration file is provided as `sample.config` in this directory.
+
+* `-h` means print a summary of the usage and available arguments.
+
+* `-m` means skip the test to determine whether the remote host is running Mac&nbsp;OS&nbsp;X; assume that it is.
 
 * `-n` means do a "dry run": explain what would be done without actually doing it.
 
-* `-q` means be quiet: don't print informative messages.  (However, if logging is configured, then `rsmirror.sh` will still write the log file.)
+* `-o` means skip the test to determine whether the remote host is running Mac&nbsp;OS&nbsp;X; assume that it is *not*.
+
+* `-q` means be quiet: don't print informative messages.  (However, if logging is configured, then `rsmirror` will still write the log file.)
+
+* `-s` means skip some paranoid security checks.  Without this, `rsmirror` will complain about a few things such as when the owner of the process is different from the owner of the configuration file.
+
+* `-v` means print the version information and then exit.
+
+Please read the comments in the file `sample.config` for information about the configuration file variables available.
+
+When you first configure a new host, you will probably want to use the `-n` (dry run) option to make `rsmirror` show what would be done, without doing it.  As part of this, `rsmirror` will still attempt to connect to the remote host and run its normal tests, so doing a dry run will often reveal problems of `ssh` connectivity and remote command invocation.  
+
+Once your configuration is debugged, invoking `rsmirror` will usually be very simple and along the lines of the following:
+
+~~~~~sh
+rsmirror -c /path/to/my.config
+~~~~~
+
+If you are running `rsmirror` from `cron`, you will probably want to use the `-q` option to make `rsmirror` less chatty.  It will then only report errors and exit with an error code if something goes wrong, which is usually what you want when running a process from `cron`:
+
+~~~~~sh
+rsmirror -q -c /path/to/my.config
+~~~~~
+
+Finally, if you have secured your remote system such that it *only* permits invocation of `rsync` over ssh and no other commands, then you will need to tell `rsmirror` to skip its normal test of the remote operating system.  (`rsmirror` will normally run an `ls` command before the actual `rsync` as part of its attempt to determine which flags it can pass to `rsync`.)  Use the option `-m` to indicate you know that the remote is a Mac&nbsp;OS&nbsp;X system, and `-o` to indicate that you know it is something *other* than a Mac&nbsp;OS&nbsp;X system.
+
+`rsmirror` returns a status code depending on the results of its actions. The numeric codes are grouped for easier interpretation; the possible codes are the following:
+
+* 0: normal return; no errors.
+
+* 1&ndash;99: if the number is between 1 and 99, it is the status code returned by rsync in the case of an rsync error.
+
+* above 100: if the number is above 100, it is an error code produced by `rsmirror`.
 
 
 Contributing
