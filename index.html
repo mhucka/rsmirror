@@ -1,83 +1,119 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Rsmirror by mhucka</title>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <title>Rsmirror by mhucka</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>Rsmirror</h1>
-        <p>A shell script for mirroring a Mac OS X directory to a remote computer using rsync over ssh.</p>
+    <div id="container">
+      <div class="inner">
 
-        <p class="view"><a href="https://github.com/mhucka/rsmirror">View the Project on GitHub <small>mhucka/rsmirror</small></a></p>
+        <header>
+          <h1>Rsmirror</h1>
+          <h2>A shell script for mirroring a Mac OS X directory to a remote computer using rsync over ssh.</h2>
+        </header>
 
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/mhucka/rsmirror/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/mhucka/rsmirror/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/mhucka/rsmirror" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
 
-        <ul>
-          <li><a href="https://github.com/mhucka/rsmirror/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/mhucka/rsmirror/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/mhucka/rsmirror">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h1>
+        <hr>
+
+        <section id="main_content">
+          <h1>
 <a name="rsmirror" class="anchor" href="#rsmirror"><span class="octicon octicon-link"></span></a>rsmirror</h1>
 
-<p>A shell script for mirroring a Mac OS X directory to a remote computer.  It uses rsync over ssh, with settings that attempt to preserve Mac OS X file attributes even if the server is not a Mac or does not use an HFS+ file system.</p>
+<p>A shell script for mirroring one or more directories to a remote computer, with a particular emphasis on handling Mac OS X files.  It uses <code>rsync</code> over <code>ssh</code>, with settings that attempt to preserve Mac OS X file attributes.</p>
 
 <hr><p><em>Author</em>:       Michael Hucka (<a href="http://www.cds.caltech.edu/%7Emhucka">http://www.cds.caltech.edu/~mhucka</a>)</p>
 
 <p><em>Copyright</em>:    Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.</p>
 
-<p><em>License</em>:      This code is licensed under the LGPL version 2.1.  Please see the Please see the file <a href="https://raw.github.com/mhucka/rsmirror/master/COPYING.txt">../COPYING.txt</a> for details.</p>
+<p><em>License</em>:      This code is licensed under the LGPL version 2.1.  Please see the file <a href="https://raw.github.com/mhucka/rsmirror/master/COPYING.txt">../COPYING.txt</a> for details.</p>
 
 <p><em>Project page</em>: <a href="http://mhucka.github.io/rsmirror">http://mhucka.github.io/rsmirror</a></p>
 
 <p><em>Repository</em>:   <a href="https://github.com/mhucka/rsmirror">https://github.com/mhucka/rsmirror</a></p>
 
 <h2>
-<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
-
-<ol>
-<li><p>This requires <code>rsync</code> 3.0.5 or higher on both the client and backup server.</p></li>
-<li><p>This requires the <code>fileflags</code> and <code>crtimes</code> patches for <code>rsync</code> to be applied on Mac OS X systems.  For more information, see the <code>rsync</code> patch directory (which, for version 3.0.5, is <a href="http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz">http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz</a>).  As of 2011-01-19, the version of <code>rsync</code> supplied by MacPorts is 3.0.7 and includes the necessary patches.</p></li>
-</ol><h2>
 <a name="background" class="anchor" href="#background"><span class="octicon octicon-link"></span></a>Background</h2>
 
-<p>Sometimes you want to mirror one or more directories to a remote machine, for example to keep off-site file backups for emergencies, or for remote access (e.g., if you regularly work from two sites), or simply to use as an alternative to a cloud-based backup system.  The tried and true secure scheme is to use <code>rsync</code> over ssh between Unix/Linux-based systems.  However, when copying files from Mac OS X systems to non-Mac systems, one has to provide a number of arguments to <code>rsync</code> to preserve as many of the Mac OS X file attributes as possible (and the copy of <code>rsync</code> on the server may need to be patched to support the arguments).  This script encapsulates these arguments, plus adds a few additional useful features for situations where you are regularly mirroring a directory to a remote machine (such as making it delete files from the remote copy if they are no longer present in the source directory being mirrored).</p>
+<p>Sometimes you want to mirror one or more directories to a remote machine on a regular basis.  The tried and true, secure approach is to use <code>rsync</code> over <code>ssh</code> between Unix/Linux-based systems.  However, properly configuring <code>rsync</code> for mirroring can be a challenge, particularly when transferring Mac OS X files, because one has to provide a number of arguments to <code>rsync</code> to preserve as many of the Mac OS X file attributes as possible.  (It also requires using a suitable version of <code>rsync</code>.)  Moreover, one may want to establish a timeout to limit the maximum duration for the entire process, log the results of all activities, and more.</p>
+
+<p>This script encapsulates these arguments, plus it adds additional features useful for situations where you regularly mirror a directory to a remote machine.  For example, it tells rsync to delete files from the remote copy if they are no longer present in the source directory being mirrored.  It also tries to do a best effort for the case when the remote is not a Mac OS X system (and thus lacks the necessary support for some file HFS+ file system features).  Finally, this script provides some useful conveniences, such as support for configuration files, logging, and the ability to mail a log to a destination address upon completion.  The script is written to use the plain Bourne <code>sh</code> shell, for increased portability.</p>
 
 <h2>
+<a name="requirements-and-strong-recommendations" class="anchor" href="#requirements-and-strong-recommendations"><span class="octicon octicon-link"></span></a>Requirements and strong recommendations</h2>
+
+<ol>
+<li><p>This requires <code>rsync</code> 3.0.5 or higher on both the client and backup server.  (Important: <strong>OS X provides a much older version of <code>rsync</code>, even in Mac OS X 10.9 Mavericks—do not use the default Mac OS X version</strong>.)</p></li>
+<li><p>This requires the "fileflags", "hfs-compression" and "crtimes" patches for <code>rsync</code> to be applied on Mac OS X systems.  As of 2011-01-19, the version of <code>rsync</code> supplied by MacPorts is 3.0.7 and it includes the necessary patches.  If you need to compile your own copy, see the <code>rsync</code> distribution's patch directory for more information.  (For version 3.0.5,  <a href="http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz">http://rsync.samba.org/ftp/rsync/src/rsync-patches-3.0.5.tar.gz</a>)</p></li>
+<li><p>You are <em>strongly</em> advised to configure the remote machine's file system to be case-sensitive.  This is the default on Linux, but on Mac OS X, a <strong>different-from-the-defaults setting must be used when formatting the disk</strong>.  Without a case-sensitive destination file system, you will encounter problems copying a directory that contains both a file with a certain name and a subdirectory with the same name, as well as when a file changes only in the case of its name from one occasion to another.</p></li>
+</ol><h2>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
-<p>The installation process is simple.</p>
+<p>Prior to installing and attempting to run <code>rsmirror</code>, you may want to set up password-less <code>ssh</code> connections between your local and remote computers.  If this is unfamiliar, please search the Internet for instructions on how to set up password-less ssh logins.</p>
 
-<p><strong>1.</strong> Copy <code>rsmirror.sh</code> to a directory of your choosing, and make sure it is executable.</p>
+<p>The installation process for <code>rsmirror</code> itself is simple:</p>
 
-<p><strong>2.</strong> Copy <code>sample.config</code> to a location of your choosing, renaming it to something suitable (perhaps named after the directory you are going to mirror).  If you want to create multiple mirroring configurations, copy <code>sample.config</code> as many times as you need and give each copy a different name.</p>
+<p><strong>1.</strong> Copy <code>rsmirror</code> to a directory of your choosing, and make sure it is executable.</p>
 
-<p><strong>3.</strong> Edit the configuration file(s).  Set the values for the different variables inside.  The comments explain the purposes of the variables.</p>
+<p><strong>2.</strong> Copy <code>sample.config</code> to a location of your choosing, renaming it to something suitable for your situation.  If you want to create multiple mirroring configurations, copy <code>sample.config</code> as many times as you need and give each copy a different name.</p>
 
-<p><strong>4.</strong> Test your configurations, first by invoking <code>rsmirror.sh -n -c CONFIG</code> (where the <code>-n</code> flag tells rsmirror.sh to echo what it will do without actually doing it, and <code>CONFIG</code> is the path to a configuration file from steps 2-3), and then by invoking <code>rsmirror.sh -c CONFIG</code> and checking that it appears to have done what you expected.</p>
+<p><strong>3.</strong> Edit the configuration file(s).  Set the values for the different variables inside.  The comments inside the sample configuration file explain the purposes of the variables.</p>
 
-<p>Once that is done, you can invoke <code>rsmirror.sh -c CONFIG</code> whenever you want to mirror the directory.  You may find it convenient to set up a cron job to perform the task on a nightly basis.</p>
+<p><strong>4.</strong> Do a basic test of your configuration by invoking <code>rsmirror -n -c CONFIG</code>, where <code>CONFIG</code> signifies the path to the configuration file from steps 2-3.  The <code>-n</code> flag tells <code>rsmirror</code> to do a dry run.  The test process will attempt to run the remote <code>rsync</code>, but will not transfer any files; if any configuration or connectivity problems exist, they will probably be revealed by doing this.</p>
+
+<p>Once the above are done, you can invoke <code>rsmirror -c CONFIG</code> whenever you want to mirror the directory.  You may find it convenient to set up a cron job to perform the task on a nightly basis.  (Note, however, that this will not work unless you also set up password-less <code>ssh</code> connections between your local and remote computers, as mentioned above.)</p>
 
 <h2>
 <a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
 
-<p><code>rsmirror.sh</code> takes three arguments, one required and two optional:</p>
+<p><code>rsmirror</code> takes five arguments, one required and two optional:</p>
 
 <ul>
-<li><p><code>-c CONFIG</code> is a required argument; <code>CONFIG</code> must be the pathname of a configuration file.</p></li>
+<li><p><code>-c</code> is a required argument; it must be followed by the pathname of a configuration file.  A sample configuration file is provided as <code>sample.config</code> in this directory.</p></li>
+<li><p><code>-h</code> means print a summary of the usage and available arguments.</p></li>
+<li><p><code>-m</code> means skip the test to determine whether the remote host is running Mac OS X; assume that it is.</p></li>
 <li><p><code>-n</code> means do a "dry run": explain what would be done without actually doing it.</p></li>
-<li><p><code>-q</code> means be quiet: don't print informative messages.  (However, if logging is configured, then <code>rsmirror.sh</code> will still write the log file.)</p></li>
+<li><p><code>-o</code> means skip the test to determine whether the remote host is running Mac OS X; assume that it is <em>not</em>.</p></li>
+<li><p><code>-q</code> means be quiet: don't print informative messages.  (However, if logging is configured, then <code>rsmirror</code> will still write the log file.)</p></li>
+<li><p><code>-s</code> means skip some paranoid security checks.  Without this, <code>rsmirror</code> will complain about a few things such as when the owner of the process is different from the owner of the configuration file.</p></li>
+<li><p><code>-v</code> means print the version information and then exit.</p></li>
+</ul><p>Please read the comments in the file <code>sample.config</code> for information about the configuration file variables available.</p>
+
+<p>When you first configure a new host, you will probably want to use the <code>-n</code> (dry run) option to make <code>rsmirror</code> show what would be done, without doing it.  As part of this, <code>rsmirror</code> will still attempt to connect to the remote host and run its normal tests, so doing a dry run will often reveal problems of <code>ssh</code> connectivity and remote command invocation.  </p>
+
+<p>Once your configuration is debugged, invoking <code>rsmirror</code> will usually be very simple and along the lines of the following:</p>
+
+<div class="highlight highlight-sh"><pre>rsmirror -c /path/to/my.config
+</pre></div>
+
+<p>If you are running <code>rsmirror</code> from <code>cron</code>, you will probably want to use the <code>-q</code> option to make <code>rsmirror</code> less chatty.  It will then only report errors and exit with an error code if something goes wrong, which is usually what you want when running a process from <code>cron</code>:</p>
+
+<div class="highlight highlight-sh"><pre>rsmirror -q -c /path/to/my.config
+</pre></div>
+
+<h2>
+<a name="return-values" class="anchor" href="#return-values"><span class="octicon octicon-link"></span></a>Return values</h2>
+
+<p><code>rsmirror</code> returns a status code depending on the results of its actions. The numeric codes are grouped for easier interpretation; the possible codes are the following:</p>
+
+<ul>
+<li><p>0: normal return; no errors.</p></li>
+<li><p>1–99: if the number is between 1 and 99, it is the status code returned by rsync in the case of an rsync error.</p></li>
+<li><p>above 100: if the number is above 100, it is an error code produced by <code>rsmirror</code> itself.</p></li>
 </ul><h2>
 <a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
 
@@ -101,14 +137,14 @@ your changes to the code or documentation.</li>
 <p>This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and documentation provided hereunder is on an "as is" basis, and the California Institute of Technology has no obligations to provide maintenance, support, updates, enhancements or modifications.  In no event shall the California Institute of Technology be liable to any party for direct, indirect, special, incidental or consequential damages, including lost profits, arising out of the use of this software and its documentation, even if the California Institute of Technology has been advised of the possibility of such damage.  See the GNU Lesser General Public License for more details.</p>
 
 <p>You should have received a copy of the GNU Lesser General Public License along with this library in the file named "COPYING.txt" included with the software distribution.</p>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/mhucka">mhucka</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
-    </div>
-    <script src="javascripts/scale.fix.js"></script>
-              <script type="text/javascript">
+        </section>
+
+        <footer>
+          Rsmirror is maintained by <a href="https://github.com/mhucka">mhucka</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+                  <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
@@ -119,5 +155,7 @@ your changes to the code or documentation.</li>
             } catch(err) {}
           </script>
 
+      </div>
+    </div>
   </body>
 </html>
