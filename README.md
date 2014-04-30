@@ -123,6 +123,21 @@ Here are some suggestions for what could be improved or added to `rsmirror`:
 * For better security, make `rsmirror` read the configuration file and look only for variable settings, instead of what it does currently, which is to source the configuration file.
 
 
+Versioning
+----------
+
+The project has adopted the [Semantic Versioning](http://semver.org) principles for versioning.  The version number format is as follows:
+
+~~~~~
+<major>.<minor>.<patch>-<label>
+~~~~~
+
+* An increment of the major version represents incompatible API changes.
+* An increment of the minor version represents additional functionality in a backwards-compatible manner.
+* An increment of the patch version represents backwards-compatible bug fixes.
+* Existence of a label represents a pre-release or build metadata.
+
+
 License
 -------
 
