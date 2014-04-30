@@ -130,9 +130,22 @@ your changes to the code or documentation.</li>
 </ol><p>Here are some suggestions for what could be improved or added to <code>rsmirror</code>:</p>
 
 <ul>
-<li><p>If the option to email the log is enabled, make <code>rsmirror</code> compress the log before mailing it.</p></li>
-<li><p>Add an option to print the output from rsync to the console, for debugging.  Currently, <code>rsmirror</code> only writes the rsync output to the log file.</p></li>
-<li><p>For better security, make <code>rsmirror</code> read the configuration file and look only for variable settings, instead of what it does currently, which is to source the configuration file.</p></li>
+<li>If the option to email the log is enabled, make <code>rsmirror</code> compress the log before mailing it.</li>
+<li>Add an option to print the output from rsync to the console, for debugging.  Currently, <code>rsmirror</code> only writes the rsync output to the log file.</li>
+<li>For better security, make <code>rsmirror</code> read the configuration file and look only for variable settings, instead of what it does currently, which is to source the configuration file.</li>
+</ul><h2>
+<a name="versioning" class="anchor" href="#versioning"><span class="octicon octicon-link"></span></a>Versioning</h2>
+
+<p>The project has adopted the <a href="http://semver.org">Semantic Versioning</a> principles for versioning.  The version number format is as follows:</p>
+
+<pre><code>&lt;major&gt;.&lt;minor&gt;.&lt;patch&gt;-&lt;label&gt;
+</code></pre>
+
+<ul>
+<li>An increment of the major version represents incompatible API changes.</li>
+<li>An increment of the minor version represents additional functionality in a backwards-compatible manner.</li>
+<li>An increment of the patch version represents backwards-compatible bug fixes.</li>
+<li>Existence of a label represents a pre-release or build metadata.</li>
 </ul><h2>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
 
