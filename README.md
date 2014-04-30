@@ -114,6 +114,14 @@ your changes to the code or documentation.
 4. Push to the branch (`git push origin my-new-feature`).
 5. Create a new pull request to notify me of your suggested changes.
 
+Here are some suggestions for what could be improved or added to `rsmirror`.
+
+* If the option to email the log is enabled, make `rsmirror` compress the log before mailing it.
+
+* Add an option to print the output from rsync to the console, for debugging.  Currently, `rsmirror` only writes the rsync output to the log file.
+
+* For better security, make `rsmirror` read the configuration file and look only for variable settings, instead of what it does currently, which is to source the configuration file.
+
 
 License
 -------
