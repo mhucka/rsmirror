@@ -54,7 +54,7 @@ Once the above are done, you can invoke `rsmirror -c CONFIG` whenever you want t
 Usage
 -----
 
-`rsmirror` accepts eight arguments, one required and the rest optional:
+`rsmirror` accepts up to eight arguments.  One of them is required and the rest are optional:
 
 * `-c` is a required argument; it must be followed by the pathname of a configuration file.  A sample configuration file is provided as `sample.config` in this directory.
 
