@@ -3,17 +3,17 @@ rsmirror
 
 A shell script for mirroring one or more directories to a remote computer, with a particular emphasis on handling Mac OS X files.  It uses `rsync` over `ssh`, with settings that attempt to preserve Mac OS X file attributes.
 
-----
 *Author*:       Michael Hucka (http://www.cds.caltech.edu/~mhucka)
 
 *Copyright*:    Copyright (C) 2008-2014 by the California Institute of Technology, Pasadena, USA.
 
-*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../COPYING.txt](https://raw.github.com/mhucka/rsmirror/master/COPYING.txt) for details.
+*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [COPYING.txt](https://raw.github.com/mhucka/rsmirror/master/COPYING.txt) for details.
 
 *Project page*: http://mhucka.github.io/rsmirror
 
 *Repository*:   https://github.com/mhucka/rsmirror
 
+----
 
 Background
 ----------
