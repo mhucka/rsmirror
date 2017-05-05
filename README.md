@@ -1,8 +1,10 @@
 <pre>
-,-. ,-. ,-,-. . ,-. ,-. ,-. ,-. 
-|   `-. | | | | |   |   | | |
-'   `-' ' ' ' ' '   '   `-' '
-</pre>
+                        ██████╗ ███████╗███╗   ███╗██╗██████╗ ██████╗  ██████╗ ██████╗ 
+                        ██╔══██╗██╔════╝████╗ ████║██║██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+                        ██████╔╝███████╗██╔████╔██║██║██████╔╝██████╔╝██║   ██║██████╔╝
+                        ██╔══██╗╚════██║██║╚██╔╝██║██║██╔══██╗██╔══██╗██║   ██║██╔══██╗
+                        ██║  ██║███████║██║ ╚═╝ ██║██║██║  ██║██║  ██║╚██████╔╝██║  ██║
+                        ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝</pre>
 
 A shell script for mirroring one or more directories to a remote computer, with a particular emphasis on handling Mac OS X files.  It uses `rsync` over `ssh`, with settings that attempt to preserve Mac OS X file attributes.
 
